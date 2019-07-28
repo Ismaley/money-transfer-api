@@ -1,3 +1,15 @@
 micronaut:
   application:
     name: transfers
+
+datasources.default: {}
+
+jpa:
+  default:
+    package-to-scan:
+    - 'com.revolut.transfer.model'
+    properties:
+      hibernate:
+        hbm2ddl:
+          auto: update
+        show_sql: true
