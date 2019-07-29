@@ -66,7 +66,7 @@ class UserServiceTest {
 
         Assertions.assertThrows(NotFoundException::class.java, {
             userService.getUser(userId)
-        }, "user with: $userId not found")
+        }, "user with id: $userId not found")
 
         verify (exactly = 1) { userService.getUser(userId) }
     }

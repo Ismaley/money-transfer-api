@@ -1,37 +1,38 @@
 package com.revolut.transfer.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.gson.Gson
 import com.revolut.transfer.dto.UserRepresentation
+import com.revolut.transfer.exception.AccountServiceException
 import io.micronaut.context.ApplicationContext
 import io.micronaut.core.io.IOUtils
 import io.micronaut.http.HttpRequest
+import io.micronaut.http.HttpResponse
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
+import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.runtime.server.EmbeddedServer
-import io.micronaut.test.annotation.MicronautTest
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import java.io.InputStream
+import java.math.BigDecimal
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class UserControllerTest {
 
     private val objectMapper: ObjectMapper = ObjectMapper()
 
-    private var server: EmbeddedServer? = null // <1>
-    private var client: HttpClient? = null // <2>
+    private var server: EmbeddedServer? = null
+    private var client: HttpClient? = null
 
     @BeforeAll
     fun setupServer() {
         server = ApplicationContext
             .build()
             .packages("com.revolut.transfer")
-            .run(EmbeddedServer::class.java) // <1>
-        client = server!!.applicationContext.createBean(HttpClient::class.java, server!!.url) // <2>
+            .run(EmbeddedServer::class.java)
+        client = server!!.applicationContext.createBean(HttpClient::class.java, server!!.url)
     }
 
     @AfterAll
@@ -44,30 +45,47 @@ class UserControllerTest {
         }
     }
 
-//    @Inject
-//    @field:Client("/")
-//    private lateinit var client: RxHttpClient
-
-
-
     @Test
     fun shouldCreateUser() {
-        val input: InputStream = UserControllerTest::class.java.getResourceAsStream("/json/createUserRequest.json")
-        val body = IOUtils.readText(input.bufferedReader())
+        val requestBody = IOUtils.readText(UserControllerTest::class.java.getResourceAsStream("/json/create-user-request.json").bufferedReader())
 
-        val request: HttpRequest<String> = HttpRequest.POST("/users", body)
-
-        val response = client!!.toBlocking().exchange(request, UserRepresentation::class.java)
+        val response = createUserRequest(requestBody)
         val responseBody = response.body() as UserRepresentation
 
-
-        Assertions.assertEquals(HttpStatus.OK, response.status)
-        Assertions.assertEquals(200, response.code())
+        Assertions.assertEquals(201, response.code())
         Assertions.assertEquals("Jhon Doe", responseBody.name)
         Assertions.assertEquals("123.123.001-61", responseBody.documentNumber)
     }
 
+    @Test
+    fun shouldNotCreateUserWithInvalidInput() {
+        val requestBody = IOUtils.readText(UserControllerTest::class.java.getResourceAsStream("/json/create-user-request-invalid.json").bufferedReader())
+
+        Assertions.assertThrows(HttpClientResponseException::class.java) {
+            Assertions.assertEquals(400, createUserRequest(requestBody).code())
+        }
+    }
+
+    @Test
+    fun shouldGetUser() {
+        val requestBody = IOUtils.readText(UserControllerTest::class.java.getResourceAsStream("/json/create-user-request.json").bufferedReader())
+
+        val createdUser = createUserRequest(requestBody).body() as UserRepresentation
+
+        val request: HttpRequest<String> = HttpRequest.GET("/users/${createdUser.id}")
+        val response = client!!.toBlocking().exchange(request, UserRepresentation::class.java)
+        val foundUser = response.body() as UserRepresentation
+
+        Assertions.assertEquals(200, response.code())
+        Assertions.assertEquals(createdUser.id, foundUser.id)
+        Assertions.assertEquals("Jhon Doe", foundUser.name)
+        Assertions.assertEquals("123.123.001-61", foundUser.documentNumber)
+    }
 
 
+    private fun createUserRequest(requestBody: String): HttpResponse<UserRepresentation> {
+        val request: HttpRequest<String> = HttpRequest.POST("/users", requestBody)
+        return client!!.toBlocking().exchange(request, UserRepresentation::class.java)
+    }
 
 }
