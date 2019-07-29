@@ -1,5 +1,6 @@
 package com.revolut.transfer.controller
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.revolut.transfer.dto.UserRepresentation
 import com.revolut.transfer.exception.AccountServiceException
@@ -80,6 +81,16 @@ class UserControllerTest {
         Assertions.assertEquals(createdUser.id, foundUser.id)
         Assertions.assertEquals("Jhon Doe", foundUser.name)
         Assertions.assertEquals("123.123.001-61", foundUser.documentNumber)
+    }
+
+    @Test
+    fun shouldNotGetNonExistingUser() {
+        Assertions.assertThrows(HttpClientResponseException::class.java) {
+            val request: HttpRequest<String> = HttpRequest.GET("/users/NonExistentUser")
+            val response = client!!.toBlocking().exchange(request, JsonNode::class.java)
+            Assertions.assertEquals(404, response.code())
+            Assertions.assertEquals("user with id: NonExistentUser not found", response.body()!!.get("message").asText())
+        }
     }
 
 
