@@ -8,16 +8,14 @@ class AccountTest {
 
     @Test
     fun `should return true if account has enough balance`() {
-        val transactions = listOf(AccountTransaction(transactionType = TransactionType.DEPOSIT, amount = BigDecimal(199.98)))
-        val account = Account(transactions = transactions)
+        val account = Account(balance = BigDecimal(200))
 
         Assertions.assertTrue(account.hasEnoughBalance(BigDecimal(199.97)))
     }
 
     @Test
     fun `should return false if account does not have enough balance`() {
-        val transactions = listOf(AccountTransaction(transactionType = TransactionType.DEPOSIT, amount = BigDecimal(199.98)))
-        val account = Account(transactions = transactions)
+        val account =  Account(balance = BigDecimal(50))
 
         Assertions.assertFalse(account.hasEnoughBalance(BigDecimal(199.99)))
     }
