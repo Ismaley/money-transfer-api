@@ -13,8 +13,12 @@ import javax.persistence.OneToMany
 
 @Entity
 data class Account(@Id @GeneratedValue(strategy = GenerationType.AUTO) val number: Int? = null,
-                   @Column val balance: BigDecimal? = BigDecimal(0),
-                   @ManyToOne(fetch = FetchType.EAGER) val user: User? = null,
-                   @OneToMany(fetch = FetchType.LAZY) val transactions: List<AccountTransaction>? = emptyList(),
-                   @Column val createdAt: LocalDateTime? = null) {
+                   @Column var balance: BigDecimal? = BigDecimal(0),
+                   @ManyToOne(fetch = FetchType.LAZY) val user: User? = null,
+                   @OneToMany(fetch = FetchType.EAGER, mappedBy = "account") val transactions: List<AccountTransaction>? = emptyList(),
+                   @Column val createdAt: LocalDateTime? = LocalDateTime.now()) {
+
+
+    fun hasEnoughBalance(withdrawnAmount: BigDecimal): Boolean =
+        withdrawnAmount <= balance
 }

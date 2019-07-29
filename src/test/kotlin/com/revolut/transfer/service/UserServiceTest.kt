@@ -1,6 +1,5 @@
 package com.revolut.transfer.service
 
-import com.revolut.transfer.exception.AccountServiceException
 import com.revolut.transfer.exception.NotFoundException
 import com.revolut.transfer.model.User
 import com.revolut.transfer.repository.UserRepository
@@ -68,6 +67,7 @@ class UserServiceTest {
         Assertions.assertThrows(NotFoundException::class.java, {
             userService.getUser(userId)
         }, "user with: $userId not found")
+
         verify (exactly = 1) { userService.getUser(userId) }
     }
 }
