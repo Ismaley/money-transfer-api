@@ -59,6 +59,8 @@ mainClassName = "com.revolut.transfer.Application"
 // use JUnit 5 platform
 test {
     useJUnitPlatform()
+    testLogging.showStandardStreams = true
+    testLogging.exceptionFormat = 'full'
 }
 
 shadowJar {

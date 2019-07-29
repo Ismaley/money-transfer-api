@@ -2,9 +2,11 @@ package com.revolut.transfer.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.gson.Gson
+import com.revolut.transfer.dto.UserRepresentation
 import io.micronaut.context.ApplicationContext
 import io.micronaut.core.io.IOUtils
 import io.micronaut.http.HttpRequest
+import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
 import io.micronaut.runtime.server.EmbeddedServer
 import io.micronaut.test.annotation.MicronautTest
@@ -27,6 +29,7 @@ class UserControllerTest {
     fun setupServer() {
         server = ApplicationContext
             .build()
+            .packages("com.revolut.transfer")
             .run(EmbeddedServer::class.java) // <1>
         client = server!!.applicationContext.createBean(HttpClient::class.java, server!!.url) // <2>
     }
@@ -54,12 +57,14 @@ class UserControllerTest {
 
         val request: HttpRequest<String> = HttpRequest.POST("/users", body)
 
-        val response = client!!.exchange(request)
-
-        println("////////////////////////// executing test controller")
-        println(response)
+        val response = client!!.toBlocking().exchange(request, UserRepresentation::class.java)
+        val responseBody = response.body() as UserRepresentation
 
 
+        Assertions.assertEquals(HttpStatus.OK, response.status)
+        Assertions.assertEquals(200, response.code())
+        Assertions.assertEquals("Jhon Doe", responseBody.name)
+        Assertions.assertEquals("123.123.001-61", responseBody.documentNumber)
     }
 
 
