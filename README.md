@@ -33,7 +33,7 @@ Application exposes following REST endpoints.
 
 The User and Account apis provide services for managing users and accounts in the system.
 
-###User endpoints
+### User endpoints
 
 | Http method | Endpoint                                        | Description                                                    |
 |-------------|-------------------------------------------------|----------------------------------------------------------------|
@@ -41,7 +41,7 @@ The User and Account apis provide services for managing users and accounts in th
 | GET         | /users/{userId}                                 | Retrieves the user's information                               |
 
 
-###Account endpoints
+### Account endpoints
 
 | Http method | Endpoint                                        | Description                                                         |
 |-------------|-------------------------------------------------|---------------------------------------------------------------------|
