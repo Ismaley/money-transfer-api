@@ -90,7 +90,7 @@ Sample response:
 ### POST /accounts
 creates a new account. 
 
-Returns 201 on success.
+* Returns 201 on success.
 
 Sample request:
 ```json
@@ -108,7 +108,7 @@ Sample success response:
 }
 ```
 
-Returns 400 if user does not exists in system.
+* Returns 400 if user does not exists in system.
 
 Sample error response:
 ```json
@@ -129,7 +129,7 @@ Sample success response:
 }
 ```
 
-Returns 400 if given user does not own the account.
+* Returns 400 if given user does not own the account.
 
 Sample error response:
 ```json
@@ -159,10 +159,10 @@ Sample success response:
 }
 ```
 
-Returns status code: 400 if given user does not own the account.
-Returns status code: 400 if source account does not have sufficient funds.
-Returns status code: 400 if amount to deposit is 0 or below.
-Returns status code: 404 if any of the provided account numbers do not exist.
+* Returns status code: 400 if given user does not own the account.
+* Returns status code: 400 if source account does not have sufficient funds.
+* Returns status code: 400 if amount to deposit is 0 or below.
+* Returns status code: 404 if any of the provided account numbers do not exist.
 
 Sample error response:
 ```json
@@ -190,9 +190,9 @@ Sample success response:
 }
 ```
 
-Returns status code: 404 if the provided account number does not exist.
-Returns status code: 400 if amount to deposit is 0 or below.
-Returns status code: 400 if given user id does not exist.
+* Returns status code: 404 if the provided account number does not exist.
+* Returns status code: 400 if amount to deposit is 0 or below.
+* Returns status code: 400 if given user id does not exist.
 
 Sample error response:
 ```json
@@ -220,11 +220,11 @@ Sample success response:
 }
 ```
 
-Returns status code: 404 if the provided account number does not exist.
-Returns status code: 400 if source account does not have sufficient funds.
-Returns status code: 400 if amount to withdraw is 0 or below.
-Returns status code: 400 if given user id does not exist.
-Returns status code: 400 if given user id does not own the account.
+* Returns status code: 404 if the provided account number does not exist.
+* Returns status code: 400 if source account does not have sufficient funds.
+* Returns status code: 400 if amount to withdraw is 0 or below.
+* Returns status code: 400 if given user id does not exist.
+* Returns status code: 400 if given user id does not own the account.
 
 Sample error response:
 ```json
@@ -251,9 +251,9 @@ Sample response:
 }]
 ```
 
-Returns status code: 404 if the provided account number does not exist.
-Returns status code: 400 if given user id does not exist.
-Returns status code: 400 if given user id does not own the account.
+* Returns status code: 404 if the provided account number does not exist.
+* Returns status code: 400 if given user id does not exist.
+* Returns status code: 400 if given user id does not own the account.
 
 Sample error response:
 ```json
