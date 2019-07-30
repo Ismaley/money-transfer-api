@@ -50,7 +50,7 @@ The User and Account apis provide services for managing users and accounts in th
 | POST        | /accounts/{accountId}/transfers                 | Transfers an amount of money from current account to another account|
 | POST        | /accounts/{accountId}/deposits                  | Deposits an amount of money to current account                      |
 | POST        | /accounts/{accountId}/withdrawals               | Withdraws an amount of money from current account                   |
-| GET         | /accounts/{accountId}/transactions              | Retrieves a list of transactions performed on current account       |
+| GET         | /accounts/{accountId}/transactions?userId={userId}              | Retrieves a list of transactions performed on current account       |
 
 
 
