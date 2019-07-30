@@ -93,9 +93,8 @@ class AccountServiceTest {
         verify (exactly = 2) { accountTransactionRepository.save(any()) }
 
         Assertions.assertEquals(BigDecimal(20), result.amount)
-        Assertions.assertEquals(userName, result.createdBy)
-        Assertions.assertEquals(userName, result.createdBy)
         Assertions.assertEquals(sourceAccountId, result.sourceAccountNumber)
+        Assertions.assertNotNull(result.createdAt)
         Assertions.assertEquals(destinationAccountId, result.destinationAccountNumber)
         Assertions.assertEquals(BigDecimal(0), sourceAccount.balance)
         Assertions.assertEquals(BigDecimal(40), destinationAccount.balance)
@@ -133,6 +132,30 @@ class AccountServiceTest {
         }, "Account with id: $accountId does not exist")
 
         verify (exactly = 1) { accountRepository.getAccountForUpdate(accountId) }
+        verify (exactly = 0) { accountRepository.update(any()) }
+        verify (exactly = 0) { userService.getUser(any()) }
+        verify (exactly = 0) { accountTransactionRepository.save(any()) }
+    }
+
+    @Test
+    fun `should not deposit money if amount is 0`() {
+        Assertions.assertThrows(AccountServiceException::class.java, {
+            accountService.deposit(userId, 1, BigDecimal(0))
+        }, "amount must be greater than 0")
+
+        verify (exactly = 0) { accountRepository.getAccountForUpdate(any()) }
+        verify (exactly = 0) { accountRepository.update(any()) }
+        verify (exactly = 0) { userService.getUser(any()) }
+        verify (exactly = 0) { accountTransactionRepository.save(any()) }
+    }
+
+    @Test
+    fun `should not deposit money if amount is below 0`() {
+        Assertions.assertThrows(AccountServiceException::class.java, {
+            accountService.deposit(userId, 1, BigDecimal(-20))
+        }, "amount must be greater than 0")
+
+        verify (exactly = 0) { accountRepository.getAccountForUpdate(any()) }
         verify (exactly = 0) { accountRepository.update(any()) }
         verify (exactly = 0) { userService.getUser(any()) }
         verify (exactly = 0) { accountTransactionRepository.save(any()) }
@@ -180,6 +203,18 @@ class AccountServiceTest {
     }
 
     @Test
+    fun `should not withdraw money if amount is below 0`() {
+        Assertions.assertThrows(AccountServiceException::class.java, {
+            accountService.withdraw(userId, 1, BigDecimal(-20))
+        }, "amount must be greater than 0")
+
+        verify (exactly = 0) { accountRepository.getAccountForUpdate(any()) }
+        verify (exactly = 0) { accountRepository.update(any()) }
+        verify (exactly = 0) { userService.getUser(any()) }
+        verify (exactly = 0) { accountTransactionRepository.save(any()) }
+    }
+
+    @Test
     fun `should not withdraw money from an account if user does not own the account`() {
         val accountId = 1
         val accountToWithdraw = Account(number = accountId, balance = BigDecimal(0), user = User(id = "AnotherUserId"))
@@ -196,6 +231,23 @@ class AccountServiceTest {
         verify (exactly = 1) { accountRepository.getAccountForUpdate(accountId) }
         verify (exactly = 0) { accountRepository.update(any()) }
         verify (exactly = 1) { userService.getUser(userId) }
+        verify (exactly = 0) { accountTransactionRepository.save(any()) }
+    }
+
+    @Test
+    fun `should not transfer money between accounts if amount is below 0`() {
+        val sourceAccountId = 1
+        val destinationAccountId = 2
+
+        Assertions.assertThrows(AccountServiceException::class.java, {
+            accountService.transferMoneyBetweenAccounts(userId, sourceAccountId, destinationAccountId, BigDecimal(-20.00))
+        }, "amount must be greater than 0")
+
+        verify (exactly = 0) { accountRepository.getAccountForUpdate(any()) }
+        verify (exactly = 0) { accountRepository.getAccountForUpdate(any()) }
+        verify (exactly = 0) { accountRepository.update(any()) }
+        verify (exactly = 0) { accountRepository.update(any()) }
+        verify (exactly = 0) { userService.getUser(any()) }
         verify (exactly = 0) { accountTransactionRepository.save(any()) }
     }
 

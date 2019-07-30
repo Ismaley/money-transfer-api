@@ -3,6 +3,7 @@ package com.revolut.transfer.dto
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.revolut.transfer.model.Account
 import com.revolut.transfer.model.AccountTransaction
+import com.revolut.transfer.model.MoneyTransferResult
 import com.revolut.transfer.model.User
 import org.springframework.format.annotation.DateTimeFormat
 import java.math.BigDecimal

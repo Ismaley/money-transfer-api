@@ -25,6 +25,7 @@ class AccountService(private val accountRepository: AccountRepository,
 
 
     fun transferMoneyBetweenAccounts(userId: String, sourceAccountId: Int, destinationAccountId: Int, amount: BigDecimal): MoneyTransferResult {
+        validateAmount(amount)
         val sourceAccount = getAccountForUpdate(sourceAccountId)
         val destinationAccount = getAccountForUpdate(destinationAccountId)
         if(isOwner(userId, sourceAccount)) {
@@ -34,7 +35,7 @@ class AccountService(private val accountRepository: AccountRepository,
                 update(destinationAccount)
                 saveAccountTransaction(sourceAccount.user!!, amount, TransactionType.DEPOSIT, destinationAccount)
                 saveAccountTransaction(sourceAccount.user, amount, TransactionType.WITHDRAW, sourceAccount)
-                return MoneyTransferResult(sourceAccountId, destinationAccountId, sourceAccount!!.user!!.name!!, amount)
+                return MoneyTransferResult(sourceAccountId, destinationAccountId, amount)
             } else {
                 throw AccountServiceException("Insufficient funds to transfer")
             }
@@ -53,6 +54,7 @@ class AccountService(private val accountRepository: AccountRepository,
     }
 
     fun deposit(userId: String, accountId: Int, amount: BigDecimal): Account {
+        validateAmount(amount)
         val account = getAccountForUpdate(accountId)
         account.balance = account.balance!!.add(amount)
         update(account)
@@ -61,6 +63,7 @@ class AccountService(private val accountRepository: AccountRepository,
     }
 
     fun withdraw(userId: String, accountId: Int, amount: BigDecimal): Account {
+        validateAmount(amount)
         val account = getAccountForUpdate(accountId)
         if(isOwner(userId, account)) {
             if(account.hasEnoughBalance(amount)) {
@@ -79,6 +82,11 @@ class AccountService(private val accountRepository: AccountRepository,
     fun getAccountTransactions(accountId: Int, userId: String): List<AccountTransaction> =
         getAccount(accountId, userId).transactions ?: emptyList()
 
+    private fun validateAmount(amount: BigDecimal) {
+        if(amount <= BigDecimal(0)) {
+            throw AccountServiceException("amount must be greater than 0")
+        }
+    }
 
     private fun isOwner(userId: String, account: Account): Boolean {
         val user = findUser(userId)

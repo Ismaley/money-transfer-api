@@ -21,9 +21,7 @@ import java.math.BigDecimal
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class UserControllerTest {
-
-    private val objectMapper: ObjectMapper = ObjectMapper()
-
+    
     private var server: EmbeddedServer? = null
     private var client: HttpClient? = null
 
