@@ -233,7 +233,7 @@ Sample error response:
 }
 ```
 
-### GET /users/{userId}?userId={userId} 
+### GET /accounts/{accountId}/transactions?userId={userId}
 Retrieves a list of transactions performed on current account
 Sample response:
 ```json
@@ -258,7 +258,7 @@ Sample response:
 Sample error response:
 ```json
 {
-    "message": "You do not own this account to withdraw money"
+    "message": "You do not own this account to retrieve it's information"
 }
 ```
 
