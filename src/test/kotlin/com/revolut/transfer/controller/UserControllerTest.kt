@@ -60,9 +60,10 @@ class UserControllerTest {
     fun shouldNotCreateUserWithInvalidInput() {
         val requestBody = IOUtils.readText(UserControllerTest::class.java.getResourceAsStream("/json/create-user-request-invalid.json").bufferedReader())
 
-        Assertions.assertThrows(HttpClientResponseException::class.java) {
-            Assertions.assertEquals(400, createUserRequest(requestBody).code())
+        val error = Assertions.assertThrows(HttpClientResponseException::class.java) {
+            createUserRequest(requestBody)
         }
+        Assertions.assertEquals(400, error.response.code())
     }
 
     @Test
@@ -83,18 +84,16 @@ class UserControllerTest {
 
     @Test
     fun shouldNotGetNonExistingUser() {
-        Assertions.assertThrows(HttpClientResponseException::class.java) {
-            val request: HttpRequest<String> = HttpRequest.GET("/users/NonExistentUser")
-            val response = client!!.toBlocking().exchange(request, JsonNode::class.java)
-            Assertions.assertEquals(404, response.code())
-            Assertions.assertEquals("user with id: NonExistentUser not found", response.body()!!.get("message").asText())
+        val request: HttpRequest<String> = HttpRequest.GET("/users/NonExistentUser")
+        val error = Assertions.assertThrows(HttpClientResponseException::class.java) {
+            client!!.toBlocking().exchange(request, JsonNode::class.java)
         }
+        Assertions.assertEquals(404, error.response.code())
+        Assertions.assertEquals("user with id: NonExistentUser not found", error.message)
     }
-
 
     private fun createUserRequest(requestBody: String): HttpResponse<UserRepresentation> {
         val request: HttpRequest<String> = HttpRequest.POST("/users", requestBody)
         return client!!.toBlocking().exchange(request, UserRepresentation::class.java)
     }
-
 }

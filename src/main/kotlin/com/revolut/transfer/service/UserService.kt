@@ -10,6 +10,7 @@ class UserService(private val userRepository: UserRepository) {
 
     fun createUser(newUser: User) = userRepository.save(newUser)
 
-    fun getUser(userId: String): User = userRepository.findOne(userId) ?: throw NotFoundException("user with: $userId not found")
+    fun getUser(userId: String): User =
+        userRepository.findOne(userId) ?: throw NotFoundException("user with id: $userId not found")
 
 }

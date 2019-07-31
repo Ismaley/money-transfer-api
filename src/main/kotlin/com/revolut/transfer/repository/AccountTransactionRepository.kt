@@ -5,7 +5,6 @@ import io.micronaut.configuration.hibernate.jpa.scope.CurrentSession
 import io.micronaut.spring.tx.annotation.Transactional
 import javax.inject.Singleton
 import javax.persistence.EntityManager
-import javax.persistence.LockModeType
 import javax.persistence.PersistenceContext
 
 @Singleton

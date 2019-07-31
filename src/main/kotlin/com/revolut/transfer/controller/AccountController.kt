@@ -27,11 +27,16 @@ class AccountController(private val accountService: AccountService) {
 
     @Get("/{accountId}")
     fun getAccount(@PathVariable accountId: Int, @QueryValue userId: String): AccountRepresentation =
-        AccountRepresentation(accountService.getAccount(accountId, userId))
+        AccountRepresentation(accountService.getAccount(userId, accountId))
 
     @Post("/{accountId}/transfers")
     fun transferMoneyBetweenAccounts(@PathVariable accountId: Int, @Body transferRequest: TransferRequest) =
-        accountService.transferMoneyBetweenAccounts(transferRequest.userId, accountId, transferRequest.destinationAccountId, transferRequest.amount)
+        accountService.transferMoneyBetweenAccounts(
+            transferRequest.userId,
+            accountId,
+            transferRequest.destinationAccountId,
+            transferRequest.amount
+        )
 
     @Post("/{accountId}/deposits")
     fun deposit(@PathVariable accountId: Int, @Body transferRequest: BalanceChangeRequest): AccountRepresentation =
@@ -42,6 +47,6 @@ class AccountController(private val accountService: AccountService) {
         AccountRepresentation(accountService.withdraw(transferRequest.userId, accountId, transferRequest.amount))
 
     @Get("/{accountId}/transactions")
-    fun getTransactions(@PathVariable accountId: Int, @QueryValue userId: String) : List<AccountTransactionRepresentation> =
-        accountService.getAccountTransactions(accountId, userId).map { AccountTransactionRepresentation(it) }.toList()
+    fun getTransactions(@PathVariable accountId: Int, @QueryValue userId: String): List<AccountTransactionRepresentation> =
+        accountService.getAccountTransactions(userId, accountId).map { AccountTransactionRepresentation(it) }.toList()
 }

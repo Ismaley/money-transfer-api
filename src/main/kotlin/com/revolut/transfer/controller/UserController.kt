@@ -21,9 +21,15 @@ class UserController(private val userService: UserService) {
     @Post
     @Status(HttpStatus.CREATED)
     fun createUser(@Valid @Body createUserRequest: CreateUserRequest): UserRepresentation =
-        UserRepresentation(userService.createUser(User(documentNumber = createUserRequest.documentNumber,
-            birthDate = createUserRequest.birthDate,
-            name = createUserRequest.name)))
+        UserRepresentation(
+            userService.createUser(
+                User(
+                    documentNumber = createUserRequest.documentNumber,
+                    birthDate = createUserRequest.birthDate,
+                    name = createUserRequest.name
+                )
+            )
+        )
 
     @Get("/{userId}")
     fun getUser(@PathVariable userId: String): UserRepresentation = UserRepresentation(userService.getUser(userId))

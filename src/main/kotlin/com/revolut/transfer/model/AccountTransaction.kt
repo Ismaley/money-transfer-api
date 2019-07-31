@@ -15,11 +15,11 @@ import javax.persistence.ManyToOne
 import javax.persistence.OneToOne
 
 @Entity
-data class AccountTransaction(@Id @GeneratedValue(strategy = GenerationType.SEQUENCE) val transactionId: Int? = null,
-                              @Column @NotNull val createdAt: LocalDateTime? = LocalDateTime.now(),
-                              @OneToOne(fetch = FetchType.LAZY) @NotNull val createdBy: User? = null,
-                              @Column @NotNull @Enumerated(value = EnumType.STRING) val transactionType: TransactionType? = null,
-                              @Column @NotNull val amount: BigDecimal? = null,
-                              @ManyToOne(fetch = FetchType.EAGER) @NotNull val account: Account? = null) {
-
-}
+data class AccountTransaction(
+    @Id @GeneratedValue(strategy = GenerationType.SEQUENCE) val transactionId: Int? = null,
+    @Column @NotNull val createdAt: LocalDateTime? = LocalDateTime.now(),
+    @OneToOne(fetch = FetchType.LAZY) @NotNull val createdBy: User? = null,
+    @Column @NotNull @Enumerated(value = EnumType.STRING) val transactionType: TransactionType? = null,
+    @Column @NotNull val amount: BigDecimal? = null,
+    @ManyToOne(fetch = FetchType.EAGER) @NotNull val account: Account? = null
+)

@@ -7,8 +7,8 @@ object Application {
     @JvmStatic
     fun main(args: Array<String>) {
         Micronaut.build()
-                .packages("com.revolut.transfer")
-                .mainClass(Application.javaClass)
-                .start()
+            .packages("com.revolut.transfer")
+            .mainClass(Application.javaClass)
+            .start()
     }
 }

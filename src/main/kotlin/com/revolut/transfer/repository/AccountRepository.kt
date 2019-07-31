@@ -24,16 +24,16 @@ open class AccountRepository(@param:CurrentSession @field:PersistenceContext pri
         return account
     }
 
-    @Transactional
     open fun getAccountForUpdate(accountId: Int): Account? =
-        entityManager.find(Account::class.java, accountId, LockModeType.PESSIMISTIC_READ, getLockProperties())
+        entityManager.find(Account::class.java, accountId, LockModeType.PESSIMISTIC_WRITE, getLockProperties())
 
     @Transactional
     open fun getAccount(accountId: Int): Account? =
         entityManager.find(Account::class.java, accountId)
 
     private fun getLockProperties(): Map<String, Any> =
-        mapOf("javax.persistence.lock.scope" to PessimisticLockScope.EXTENDED,
-            "javax.persistence.lock.timeout" to 1000L)
-
+        mapOf(
+            "javax.persistence.lock.scope" to PessimisticLockScope.EXTENDED,
+            "javax.persistence.lock.timeout" to 2000L
+        )
 }

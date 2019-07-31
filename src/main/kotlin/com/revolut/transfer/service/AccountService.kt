@@ -1,6 +1,7 @@
 package com.revolut.transfer.service
 
 import com.revolut.transfer.exception.AccountServiceException
+import com.revolut.transfer.exception.NotFoundException
 import com.revolut.transfer.model.Account
 import com.revolut.transfer.model.AccountTransaction
 import com.revolut.transfer.model.MoneyTransferResult
@@ -8,83 +9,98 @@ import com.revolut.transfer.model.TransactionType
 import com.revolut.transfer.model.User
 import com.revolut.transfer.repository.AccountRepository
 import com.revolut.transfer.repository.AccountTransactionRepository
-import javassist.NotFoundException
-import java.lang.RuntimeException
+import io.micronaut.spring.tx.annotation.Transactional
+import mu.KotlinLogging
 import java.math.BigDecimal
-import java.time.LocalDateTime
 import javax.inject.Singleton
 
 @Singleton
-class AccountService(private val accountRepository: AccountRepository,
-                     private val userService: UserService,
-                     private val accountTransactionRepository: AccountTransactionRepository
+open class AccountService(
+    private val accountRepository: AccountRepository,
+    private val userService: UserService,
+    private val accountTransactionRepository: AccountTransactionRepository
 ) {
+    private val log = KotlinLogging.logger { }
 
     fun createAccount(userId: String): Account =
         accountRepository.save(Account(user = findUser(userId)))
 
-
-    fun transferMoneyBetweenAccounts(userId: String, sourceAccountId: Int, destinationAccountId: Int, amount: BigDecimal): MoneyTransferResult {
+    @Transactional
+    open fun transferMoneyBetweenAccounts(
+        userId: String,
+        sourceAccountId: Int,
+        destinationAccountId: Int,
+        amount: BigDecimal
+    ): MoneyTransferResult {
         validateAmount(amount)
         val sourceAccount = getAccountForUpdate(sourceAccountId)
         val destinationAccount = getAccountForUpdate(destinationAccountId)
-        if(isOwner(userId, sourceAccount)) {
-            if(sourceAccount.hasEnoughBalance(amount)) {
-                transferMoney(sourceAccount, destinationAccount, amount)
-                update(sourceAccount)
-                update(destinationAccount)
-                saveAccountTransaction(sourceAccount.user!!, amount, TransactionType.DEPOSIT, destinationAccount)
-                saveAccountTransaction(sourceAccount.user, amount, TransactionType.WITHDRAW, sourceAccount)
-                return MoneyTransferResult(sourceAccountId, destinationAccountId, amount)
-            } else {
-                throw AccountServiceException("Insufficient funds to transfer")
-            }
+        log.info { "starting transferring $amount from account: $sourceAccountId to account: $destinationAccountId" }
+        validateAccountOwnership(userId, sourceAccount)
+        if (sourceAccount.hasEnoughBalance(amount)) {
+            transferMoney(sourceAccount, destinationAccount, amount)
+            update(sourceAccount)
+            update(destinationAccount)
+            saveAccountTransaction(sourceAccount.user!!, amount, TransactionType.DEPOSIT, destinationAccount)
+            saveAccountTransaction(sourceAccount.user, amount, TransactionType.WITHDRAW, sourceAccount)
+            log.info { "finishing transferring $amount from account: $sourceAccountId to account: $destinationAccountId with success" }
+            return MoneyTransferResult(sourceAccountId, destinationAccountId, amount)
         } else {
-            throw AccountServiceException("You do not own this account to retrieve it's information")
+            log.info { "finishing transferring $amount from account: $sourceAccountId to account: $destinationAccountId with error" }
+            throw AccountServiceException("Insufficient funds to transfer")
         }
+
     }
 
-    fun getAccount(accountId: Int, userId: String): Account {
-        val account = accountRepository.getAccount(accountId) ?: throw NotFoundException("Account with id: $accountId does not exist")
-        if(isOwner(userId, account)) {
-            return account
-        } else {
-            throw AccountServiceException("You do not own this account to retrieve it's information")
-        }
-    }
-
-    fun deposit(userId: String, accountId: Int, amount: BigDecimal): Account {
-        validateAmount(amount)
-        val account = getAccountForUpdate(accountId)
-        account.balance = account.balance!!.add(amount)
-        update(account)
-        saveAccountTransaction(findUser(userId), amount, TransactionType.DEPOSIT, account)
+    fun getAccount(userId: String, accountId: Int): Account {
+        val account = accountRepository.getAccount(accountId)
+            ?: throw NotFoundException("Account with id: $accountId does not exist")
+        validateAccountOwnership(userId, account)
         return account
     }
 
-    fun withdraw(userId: String, accountId: Int, amount: BigDecimal): Account {
+    @Transactional
+    open fun deposit(userId: String, accountId: Int, amount: BigDecimal): Account {
         validateAmount(amount)
         val account = getAccountForUpdate(accountId)
-        if(isOwner(userId, account)) {
-            if(account.hasEnoughBalance(amount)) {
-                account.balance = account.balance!!.subtract(amount)
-                update(account)
-                saveAccountTransaction(account.user!!, amount, TransactionType.WITHDRAW, account)
-                return account
-            } else {
-                throw AccountServiceException("Insufficient funds to withdraw")
-            }
+        log.info { "depositing $amount on account $accountId" }
+        account.balance = account.balance!!.add(amount)
+        update(account)
+        saveAccountTransaction(findUser(userId), amount, TransactionType.DEPOSIT, account)
+        log.info { "finishing depositing $amount on account $accountId" }
+        return account
+    }
+
+    @Transactional
+    open fun withdraw(userId: String, accountId: Int, amount: BigDecimal): Account {
+        validateAmount(amount)
+        val account = getAccountForUpdate(accountId)
+        log.info { "withdrawing $amount from account $accountId" }
+        validateAccountOwnership(userId, account)
+        if (account.hasEnoughBalance(amount)) {
+            account.balance = account.balance!!.subtract(amount)
+            update(account)
+            saveAccountTransaction(account.user!!, amount, TransactionType.WITHDRAW, account)
+            log.info { "finishing withdrawing $amount from account $accountId" }
+            return account
         } else {
-            throw AccountServiceException("You do not own this account to withdraw money")
+            log.info { "finishing withdrawing $amount from account $accountId with error" }
+            throw AccountServiceException("Insufficient funds to withdraw")
         }
     }
 
-    fun getAccountTransactions(accountId: Int, userId: String): List<AccountTransaction> =
-        getAccount(accountId, userId).transactions ?: emptyList()
+    fun getAccountTransactions(userId: String, accountId: Int): List<AccountTransaction> =
+        getAccount(userId, accountId).transactions ?: emptyList()
 
     private fun validateAmount(amount: BigDecimal) {
-        if(amount <= BigDecimal(0)) {
+        if (amount <= BigDecimal(0)) {
             throw AccountServiceException("amount must be greater than 0")
+        }
+    }
+
+    private fun validateAccountOwnership(userId: String, account: Account) {
+        if (!isOwner(userId, account)) {
+            throw AccountServiceException("You do not own this account")
         }
     }
 
@@ -98,17 +114,30 @@ class AccountService(private val accountRepository: AccountRepository,
         destinationAccount.balance = destinationAccount.balance!!.add(amount)
     }
 
-    private fun update(account: Account) : Account = accountRepository.update(account)
+    private fun update(account: Account): Account = accountRepository.update(account)
 
     private fun getAccountForUpdate(accountId: Int): Account =
-        accountRepository.getAccountForUpdate(accountId) ?: throw NotFoundException("Account with id: $accountId does not exists")
+        accountRepository.getAccountForUpdate(accountId)
+            ?: throw NotFoundException("Account with id: $accountId does not exists")
 
-    private fun saveAccountTransaction(user: User, amount: BigDecimal, transactionType: TransactionType, account: Account): AccountTransaction =
-        accountTransactionRepository.save(AccountTransaction(createdBy = user, amount = amount, transactionType = transactionType, account = account))
+    private fun saveAccountTransaction(
+        user: User,
+        amount: BigDecimal,
+        transactionType: TransactionType,
+        account: Account
+    ): AccountTransaction =
+        accountTransactionRepository.save(
+            AccountTransaction(
+                createdBy = user,
+                amount = amount,
+                transactionType = transactionType,
+                account = account
+            )
+        )
 
     private fun findUser(userId: String): User {
-        try {
-            return userService.getUser(userId)
+        return try {
+            userService.getUser(userId)
         } catch (e: Exception) {
             if (e is NotFoundException) {
                 throw AccountServiceException("user with id: $userId does not exist")

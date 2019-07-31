@@ -1,6 +1,7 @@
 package com.revolut.transfer.service
 
 import com.revolut.transfer.exception.AccountServiceException
+import com.revolut.transfer.exception.NotFoundException
 import com.revolut.transfer.model.Account
 import com.revolut.transfer.model.AccountTransaction
 import com.revolut.transfer.model.TransactionType
@@ -10,7 +11,6 @@ import com.revolut.transfer.repository.AccountTransactionRepository
 import io.mockk.every
 import io.mockk.mockkClass
 import io.mockk.verify
-import javassist.NotFoundException
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -372,7 +372,7 @@ class AccountServiceTest {
         every { accountRepository.getAccount(accountId) } returns account
         every { userService.getUser(userId) } returns user
 
-        val foundAccount = accountService.getAccount(accountId, userId)
+        val foundAccount = accountService.getAccount(userId, accountId)
         verify (exactly = 1) { userService.getUser(userId) }
         verify (exactly = 1) { accountRepository.getAccount(accountId) }
         Assertions.assertEquals(account, foundAccount)
@@ -388,7 +388,7 @@ class AccountServiceTest {
         every { accountRepository.getAccount(accountId) } returns null
 
         Assertions.assertThrows(NotFoundException::class.java, {
-            accountService.getAccount(accountId, userId)
+            accountService.getAccount(userId, accountId)
         }, "Account with id: $accountId does not exist")
 
         verify (exactly = 0) { userService.getUser(any()) }
@@ -405,7 +405,7 @@ class AccountServiceTest {
         every { userService.getUser(userId) } returns user
 
         Assertions.assertThrows(AccountServiceException::class.java, {
-            accountService.getAccount(accountId, userId)
+            accountService.getAccount(userId, accountId)
         }, "You do not own this account to retrieve it's information")
 
         verify (exactly = 1) { userService.getUser(userId) }
@@ -421,7 +421,7 @@ class AccountServiceTest {
         every { accountRepository.getAccount(accountId) } returns account
         every { userService.getUser(userId) } returns user
 
-        val transactions = accountService.getAccountTransactions(accountId, userId)
+        val transactions = accountService.getAccountTransactions(userId, accountId)
         verify (exactly = 1) { userService.getUser(userId) }
         verify (exactly = 1) { accountRepository.getAccount(accountId) }
         Assertions.assertEquals(1, transactions.size)

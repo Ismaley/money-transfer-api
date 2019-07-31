@@ -4,13 +4,13 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.revolut.transfer.dto.AccountRepresentation
-import com.revolut.transfer.dto.AccountTransactionRepresentation
 import com.revolut.transfer.dto.UserRepresentation
 import com.revolut.transfer.model.MoneyTransferResult
 import com.revolut.transfer.util.toBD
 import io.micronaut.context.ApplicationContext
 import io.micronaut.core.io.IOUtils
 import io.micronaut.http.HttpRequest
+import io.micronaut.http.HttpStatus
 import io.micronaut.http.client.HttpClient
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.runtime.server.EmbeddedServer
@@ -66,11 +66,11 @@ class AccountControllerTest {
     fun shouldNotCreateAccountForANonExistentUser() {
         val request = HttpRequest.POST("/accounts", objectMapper.createObjectNode().put("userId", "NonExistentUser"))
 
-        Assertions.assertThrows(HttpClientResponseException::class.java) {
-            val response = client!!.toBlocking().exchange(request, JsonNode::class.java)
-            Assertions.assertEquals(404, response.code())
-            Assertions.assertEquals("user with id: NonExistentUser does not exist", response.body()!!.get("message").asText())
+        val error = Assertions.assertThrows(HttpClientResponseException::class.java) {
+            client!!.toBlocking().exchange(request, JsonNode::class.java)
         }
+        Assertions.assertEquals(400, error.response.code())
+        Assertions.assertEquals("user with id: NonExistentUser does not exist", error.message)
     }
 
     @Test
@@ -92,16 +92,16 @@ class AccountControllerTest {
 
     @Test
     fun shouldNotDepositMoneyOnNonExistentAccount() {
-        val request = HttpRequest.POST("/accounts/nonExistentAccount/deposits",
+        val request = HttpRequest.POST("/accounts/0/deposits",
             objectMapper.createObjectNode()
                 .put("userId", user!!.id)
                 .put("amount", 10.99.toBD()))
 
-        Assertions.assertThrows(HttpClientResponseException::class.java) {
-            val response = client!!.toBlocking().exchange(request, JsonNode::class.java)
-            Assertions.assertEquals(404, response.code())
-            Assertions.assertEquals("Account with id: nonExistentAccount does not exists", response.body()!!.get("message").asText())
+        val error = Assertions.assertThrows(HttpClientResponseException::class.java) {
+            client!!.toBlocking().exchange(request, JsonNode::class.java)
         }
+        Assertions.assertEquals(404, error.response.code())
+        Assertions.assertEquals("Account with id: 0 does not exists", error.message)
     }
 
     @Test
@@ -113,12 +113,13 @@ class AccountControllerTest {
                 .put("userId", user!!.id)
                 .put("amount", BigDecimal(0)))
 
-        Assertions.assertThrows(HttpClientResponseException::class.java) {
-            val response = client!!.toBlocking().exchange(request, JsonNode::class.java)
-            Assertions.assertEquals(400, response.code())
-            Assertions.assertEquals("amount must be greater than 0", response.body()!!.get("message").asText())
+        val error = Assertions.assertThrows(HttpClientResponseException::class.java) {
+            client!!.toBlocking().exchange(request, JsonNode::class.java)
         }
+        Assertions.assertEquals(400, error.response.code())
+        Assertions.assertEquals("amount must be greater than 0", error.message)
     }
+
 
     @Test
     fun shouldWithdrawMoneyFromAccount() {
@@ -140,16 +141,16 @@ class AccountControllerTest {
 
     @Test
     fun shouldNotWithdrawMoneyFromNonExistentAccount() {
-        val request = HttpRequest.POST("/accounts/nonExistentAccount/withdrawals",
+        val request = HttpRequest.POST("/accounts/0/withdrawals",
             objectMapper.createObjectNode()
                 .put("userId", user!!.id)
                 .put("amount", 10.99.toBD()))
 
-        Assertions.assertThrows(HttpClientResponseException::class.java) {
-            val response = client!!.toBlocking().exchange(request, JsonNode::class.java)
-            Assertions.assertEquals(404, response.code())
-            Assertions.assertEquals("Account with id: nonExistentAccount does not exists", response.body()!!.get("message").asText())
+        val error = Assertions.assertThrows(HttpClientResponseException::class.java) {
+            client!!.toBlocking().exchange(request, JsonNode::class.java)
         }
+        Assertions.assertEquals(404, error.response.code())
+        Assertions.assertEquals("Account with id: 0 does not exists", error.message)
     }
 
     @Test
@@ -161,11 +162,11 @@ class AccountControllerTest {
                 .put("userId", user!!.id)
                 .put("amount", BigDecimal(0)))
 
-        Assertions.assertThrows(HttpClientResponseException::class.java) {
-            val response = client!!.toBlocking().exchange(request, JsonNode::class.java)
-            Assertions.assertEquals(400, response.code())
-            Assertions.assertEquals("amount must be greater than 0", response.body()!!.get("message").asText())
+        val error = Assertions.assertThrows(HttpClientResponseException::class.java) {
+             client!!.toBlocking().exchange(request, JsonNode::class.java)
         }
+        Assertions.assertEquals(400, error.response.code())
+        Assertions.assertEquals("amount must be greater than 0", error.message)
     }
 
     @Test
@@ -203,11 +204,11 @@ class AccountControllerTest {
                 .put("destinationAccountId", 0)
                 .put("amount", 10.45.toBD()))
 
-        Assertions.assertThrows(HttpClientResponseException::class.java) {
-            val response = client!!.toBlocking().exchange(request, JsonNode::class.java)
-            Assertions.assertEquals(404, response.code())
-            Assertions.assertEquals("Account with id: 0 does not exists", response.body()!!.get("message").asText())
+        val error = Assertions.assertThrows(HttpClientResponseException::class.java) {
+            client!!.toBlocking().exchange(request, JsonNode::class.java)
         }
+        Assertions.assertEquals(404, error.response.code())
+        Assertions.assertEquals("Account with id: 0 does not exists", error.message)
     }
 
     @Test
@@ -222,12 +223,12 @@ class AccountControllerTest {
                 .put("destinationAccountId", destinationAccount.number)
                 .put("amount", 500.45.toBD()))
 
-        Assertions.assertThrows(HttpClientResponseException::class.java) {
-            val response = client!!.toBlocking().exchange(request, JsonNode::class.java)
-            Assertions.assertEquals(400, response.code())
-            Assertions.assertEquals("Insufficient funds to transfer", response.body()!!.get("message").asText())
-            Assertions.assertEquals(20.99.toBD(), checkBalance(sourceAccount.number))
+        val error = Assertions.assertThrows(HttpClientResponseException::class.java) {
+            client!!.toBlocking().exchange(request, JsonNode::class.java)
         }
+        Assertions.assertEquals(400, error.response.code())
+        Assertions.assertEquals("Insufficient funds to transfer", error.message)
+        Assertions.assertEquals(20.99.toBD(), checkBalance(sourceAccount.number))
     }
 
     @Test
