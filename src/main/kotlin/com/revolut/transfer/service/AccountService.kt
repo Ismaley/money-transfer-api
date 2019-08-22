@@ -33,9 +33,12 @@ open class AccountService(
         amount: BigDecimal
     ): MoneyTransferResult {
         validateAmount(amount)
-        val sourceAccount = getAccountForUpdate(sourceAccountId)
-        val destinationAccount = getAccountForUpdate(destinationAccountId)
         log.info { "starting transferring $amount from account: $sourceAccountId to account: $destinationAccountId" }
+        log.info { "trying to lock source account: $sourceAccountId" }
+        val sourceAccount = getAccountForUpdate(sourceAccountId)
+//        Thread.sleep(500)
+        log.info { "trying to lock destination account: $destinationAccountId" }
+        val destinationAccount = getAccountForUpdate(destinationAccountId)
         validateAccountOwnership(userId, sourceAccount)
         if (sourceAccount.hasEnoughBalance(amount)) {
             transferMoney(sourceAccount, destinationAccount, amount)

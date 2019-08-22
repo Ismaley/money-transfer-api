@@ -4,6 +4,7 @@ import com.revolut.transfer.model.Account
 import com.revolut.transfer.model.User
 import io.micronaut.context.ApplicationContext
 import io.micronaut.runtime.server.EmbeddedServer
+import jdk.nashorn.internal.ir.annotations.Ignore
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
@@ -12,6 +13,8 @@ import org.junit.jupiter.api.TestInstance
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.Month
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadPoolExecutor
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AccountIntegratedTest {
@@ -54,6 +57,36 @@ class AccountIntegratedTest {
         val account = accountService.getAccount(user.id!!, account.number!!)
         Assertions.assertTrue(initialBalance.compareTo(account.balance) == 0)
     }
+
+    @Test
+    fun shouldTestDeadLockPossibility() {
+        val accountA = createAccount()
+        val accountB = createAccount()
+        val accountC = createAccount()
+
+        accountService.deposit(user.id!!, accountA.number!!, 30.toBigDecimal())
+        accountService.deposit(user.id!!, accountB.number!!, 30.toBigDecimal())
+        accountService.deposit(user.id!!, accountC.number!!, 30.toBigDecimal())
+
+        println("balances of accounts A: ${accountA.balance}, B: ${accountB.balance}, C: ${accountC.balance}")
+
+        val transferFromAtoB = generateAccountTransfer(accountA.number!!, accountB.number!!, 10.toBigDecimal())
+        val transferFromBtoC = generateAccountTransfer(accountB.number!!, accountC.number!!, 10.toBigDecimal())
+        val transferFromCtoA = generateAccountTransfer(accountC.number!!, accountA.number!!, 10.toBigDecimal())
+
+        val transactions = listOf(transferFromAtoB, transferFromBtoC, transferFromCtoA)
+
+        transactions.parallelStream().forEach { it.start() }
+        transactions.map { it.join() }
+
+        println("balances of accounts A: ${accountA.balance}, B: ${accountB.balance}, C: ${accountC.balance}")
+
+    }
+
+    private fun generateAccountTransfer(sourceAccountNumber: Int, destinationAccountNumber: Int, amount: BigDecimal): Thread =
+        Thread {
+            accountService.transferMoneyBetweenAccounts(user.id!!, sourceAccountNumber, destinationAccountNumber, amount)
+        }
 
     private fun generateAccountDeposits(amount: BigDecimal): Thread =
         Thread {
